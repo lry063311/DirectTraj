@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 
-# https://github.com/facebookresearch/mae/blob/main/util/pos_embed.py
 def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
     """
     embed_dim: output dimension for each position
