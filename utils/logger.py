@@ -1,12 +1,7 @@
-"""
-Inspired by https://github.com/SebiSebi/friendlylog
-"""
-
 import logging
 import sys
 from copy import copy
 from typing import Union
-
 from colored import attr, fg
 
 DEBUG = "debug"
