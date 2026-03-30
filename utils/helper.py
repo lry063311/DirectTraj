@@ -1,9 +1,4 @@
 import torch
-# from sklearn.datasets import make_swiss_roll
-
-# def sample_batch(size, noise=1.0):
-#     x, _= make_swiss_roll(size, noise=noise)
-#     return x[:, [0, 2]] / 10.0
 
 def extract(input, t, x):
     shape = x.shape
@@ -21,7 +16,7 @@ def make_beta_schedule(schedule='linear', n_timesteps=1000, start=1e-5, end=1e-2
         betas = torch.sigmoid(betas) * (end - start) + start
     return betas
 
-def load_porto_data(path=r"C:\Users\李瑞洋\PycharmProjects\ControlTraj复现\ControlTraj\data\porto_roads_test_1000.pkl"):
+def load_porto_data(path=r"XXXXXXX"):
     import pickle
     with open(path, 'rb') as f:
         data = pickle.load(f)
