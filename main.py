@@ -1,11 +1,4 @@
 import torch
-
-# 🔥 [DEBUG] 强制开启 TF32 (针对 3090/4090 显卡加速)
-if torch.cuda.is_available():
-    torch.backends.cuda.matmul.allow_tf32 = True
-    torch.backends.cudnn.allow_tf32 = True
-    print(f"🔥 [Env] TF32 Acceleration Enabled: {torch.backends.cuda.matmul.allow_tf32}")
-
 import torch.nn as nn
 import numpy as np
 import math
@@ -17,12 +10,6 @@ import random
 from pathlib import Path
 from copy import deepcopy
 from types import SimpleNamespace
-
-# 🚀 屏蔽干扰警告
-warnings.filterwarnings("ignore")
-warnings.filterwarnings("ignore", category=FutureWarning)
-warnings.filterwarnings("ignore", module="timm")
-
 import torch.nn.functional as F
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
