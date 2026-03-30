@@ -8,14 +8,10 @@ from models.patchify import PatchEmbed1D, PatchEmbed2D
 from models.pos_emb import get_2d_sincos_pos_embed, get_1d_sincos_pos_embed_from_grid
 from models.WideAndDeep import WideAndDeep
 
-
-# -----------------------------------------------------------------------------
-# 创新点 3: 拓扑感知交叉注意力模块 (Topology-Aware Cross-Attention)
-# -----------------------------------------------------------------------------
 class TopologyCrossAttention(nn.Module):
     def __init__(self, d_model, nhead):
         super().__init__()
-        # Q: 轨迹特征, K/V: 路网拓扑特征
+        
         self.cross_attn = nn.MultiheadAttention(d_model, nhead, batch_first=True)
         self.norm = nn.LayerNorm(d_model)
 
@@ -25,21 +21,16 @@ class TopologyCrossAttention(nn.Module):
             traj_tokens (Query): [Batch, Seq_Len, Dim]
             road_features (Key/Value): [Batch, Num_Roads, Dim]
         """
-        # 🔥 如果路网被 Dropout (传入 None)，直接返回原特征 (即退化为纯 DiT)
         if road_features is None:
             return traj_tokens
 
-        # Q-K-V 交互：轨迹 Token 动态查询相关的路网特征
+       
         attn_output, _ = self.cross_attn(query=traj_tokens,
                                          key=road_features,
                                          value=road_features)
-        # 残差连接 + LayerNorm
         return self.norm(traj_tokens + attn_output)
 
 
-# -----------------------------------------------------------------------------
-# 辅助模块: Timestep Embedding
-# -----------------------------------------------------------------------------
 class TimestepEmbedder(nn.Module):
     def __init__(self, hidden_size, frequency_embedding_size=256):
         super().__init__()
@@ -67,10 +58,6 @@ class TimestepEmbedder(nn.Module):
         t_emb = self.mlp(t_freq)
         return t_emb
 
-
-# -----------------------------------------------------------------------------
-# DirectTraj Block: 融合了 Cross-Attention 的 DiT Block
-# -----------------------------------------------------------------------------
 def modulate(x, shift, scale):
     return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
 
@@ -121,10 +108,6 @@ class FinalLayer(nn.Module):
         x = self.linear(x)
         return x
 
-
-# -----------------------------------------------------------------------------
-# 主模型: DirectTraj
-# -----------------------------------------------------------------------------
 class DirectTraj(nn.Module):
     def __init__(
             self,
@@ -143,7 +126,6 @@ class DirectTraj(nn.Module):
         self.lon_lat_embedding = lon_lat_embedding
         self.hidden_size = hidden_size
 
-        # 1. 输入嵌入
         if self.lon_lat_embedding:
             self.x_embedder = PatchEmbed2D(embed_dim=hidden_size)
         else:
@@ -155,15 +137,12 @@ class DirectTraj(nn.Module):
         seq_len = 2 * traj_length if lon_lat_embedding else traj_length
         self.pos_embed = nn.Parameter(torch.zeros(1, seq_len, hidden_size), requires_grad=False)
 
-        # 2. 维度适配
         self.road_projector = nn.Linear(cond_dim, hidden_size)
 
-        # 3. 骨干网络
         self.blocks = nn.ModuleList([
             DirectTrajBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio) for _ in range(depth)
         ])
 
-        # 4. 输出层
         self.final_layer = FinalLayer(hidden_size, self.patch_size, self.out_channels)
 
         self.initialize_weights()
@@ -215,8 +194,6 @@ class DirectTraj(nn.Module):
         y_emb = self.y_embedder(y, cond_drop_prob=0.1 if self.training else 0.0)
         c = t_emb + y_emb
 
-        # 🔥🔥🔥 [关键修复]：只在 road_features 存在时进行投影 🔥🔥🔥
-        # 否则如果 road_features 是 None (Condition Dropout), road_projector 会报错
         if road_features is not None:
             road_features = self.road_projector(road_features)
 
